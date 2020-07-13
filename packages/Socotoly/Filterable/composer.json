@@ -1,0 +1,12 @@
+{
+    "name": "socotoly/filterable",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Socotoly",
+            "email": "me@socotoly.com"
+        }
+    ],
+    "minimum-stability": "dev",
+    "require": {}
+}

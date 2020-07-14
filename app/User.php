@@ -5,10 +5,16 @@ namespace App;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Socotoly\Filterable\Traits\Filterable;
 
 class User extends Authenticatable
 {
-    use Notifiable;
+    use Notifiable, Filterable;
+
+    protected static function filterable()
+    {
+        return true;
+    }
 
     /**
      * The attributes that are mass assignable.

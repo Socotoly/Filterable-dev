@@ -1,12 +1,28 @@
 {
     "name": "socotoly/filterable",
+    "description": "A Laravel package to filter models through query strings",
+    "keywords": [
+        "socotoly",
+        "filter",
+        "filterable",
+        "model",
+        "laravel-filter"
+    ],
+    "homepage": "https://github.com/Socotoly/Filterable",
     "license": "MIT",
     "authors": [
         {
-            "name": "Socotoly",
-            "email": "me@socotoly.com"
+            "name": "Yaqoob Khalid",
+            "email": "me@socotoly.com",
+            "role": "Developer"
         }
     ],
+    "require": {},
+    "autoload": {
+        "psr-4": {
+            "Socotoly\\Filterable\\": "src"
+        }
+    },
     "minimum-stability": "dev",
-    "require": {}
+    "prefer-stable": true
 }

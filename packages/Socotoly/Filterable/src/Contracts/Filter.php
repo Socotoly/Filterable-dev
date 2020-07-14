@@ -5,6 +5,7 @@ namespace Socotoly\Filterable\Contracts;
 
 
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
 
 abstract class Filter
 {
@@ -12,12 +13,14 @@ abstract class Filter
 
     public function __construct()
     {
-        $name = strtolower(class_basename(self::class));
-        if($pos = strpos($name, 'Filter') !== false)
-            $name = substr($name, $pos);
+        $name = strtolower(class_basename(static::class));
+
+        $pos = strpos($name, 'filter');
+        if ($pos !== false)
+            $name = substr($name, 0, $pos - $pos * 2 - 1);
 
         $this->name = $name;
     }
 
-    abstract public function apply(Builder &$builder);
+    abstract public function apply(Builder &$builder, Model $model);
 }

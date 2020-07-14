@@ -6,7 +6,9 @@ namespace Socotoly\Filterable;
 
 use Exception;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
 use Socotoly\Filterable\Contracts\Filter;
+use Socotoly\Filterable\Support\Helpers;
 
 class FilterFactory
 {
@@ -17,15 +19,18 @@ class FilterFactory
 
     private $filters;
 
-    public function __construct(Builder $builder, array $filters)
+    private $model;
+
+    public function __construct(Builder &$builder, Model $model, array $filters)
     {
         $this->builder = $builder;
         $this->userFilters = $filters;
+        $this->model = $model;
 
         $this->filters = collect();
     }
 
-    public function apply()
+    public function apply(): Builder
     {
         foreach ($this->userFilters as $filter) {
             if (!is_a($filter, Filter::class, true))
@@ -34,14 +39,18 @@ class FilterFactory
             $this->filters->add(new $filter);
         }
 
-        $filters = require_once "Filters.php";
+        $filters = require "Filters.php";
 
         foreach ($filters as $filter) {
             $this->filters->add(new $filter);
         }
 
-        $this->filters->whereIn('name', request()->all())->each(function (Filter $filter) {
-            $filter->apply($this->builder);
+        $request = Helpers::arrayToLowerCase(request()->keys());
+
+        $this->filters->whereIn('name', $request)->each(function (Filter $filter) {
+            $filter->apply($this->builder, $this->model);
         });
+
+        return $this->builder;
     }
 }

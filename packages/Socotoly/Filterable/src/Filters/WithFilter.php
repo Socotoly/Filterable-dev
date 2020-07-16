@@ -6,11 +6,13 @@ namespace Socotoly\Filterable\Filters;
 
 use Socotoly\Filterable\Contracts\Filter;
 
-class FirstFilter extends Filter
+class WithFilter extends Filter
 {
 
     public function apply(): void
     {
-        $this->builder->take(1);
+        $this->applicable();
+        $with = request('with');
+
     }
 }

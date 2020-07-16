@@ -36,19 +36,19 @@ class FilterFactory
             if (!is_a($filter, Filter::class, true))
                 throw new Exception('the provided filter is not a type of Filter class');
 
-            $this->filters->add(new $filter);
+            $this->filters->add(new $filter($this->builder, $this->model));
         }
 
         $filters = require "Filters.php";
 
         foreach ($filters as $filter) {
-            $this->filters->add(new $filter);
+            $this->filters->add(new $filter($this->builder, $this->model));
         }
 
         $request = Helpers::arrayToLowerCase(request()->keys());
 
         $this->filters->whereIn('name', $request)->each(function (Filter $filter) {
-            $filter->apply($this->builder, $this->model);
+            $filter->apply();
         });
 
         return $this->builder;

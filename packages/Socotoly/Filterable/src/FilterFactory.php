@@ -8,7 +8,8 @@ use Exception;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Socotoly\Filterable\Contracts\Filter;
-use Socotoly\Filterable\Support\Helpers;
+use Socotoly\Filterable\Filters\OrderFilter;
+use Socotoly\Filterable\Support\Request;
 
 class FilterFactory
 {
@@ -21,6 +22,8 @@ class FilterFactory
 
     private $model;
 
+    private $request;
+
     public function __construct(Builder &$builder, Model $model, array $filters)
     {
         $this->builder = $builder;
@@ -28,6 +31,7 @@ class FilterFactory
         $this->model = $model;
 
         $this->filters = collect();
+        $this->request = new Request(request()->server->get('QUERY_STRING'));
     }
 
     public function apply(): Builder
@@ -36,21 +40,36 @@ class FilterFactory
             if (!is_a($filter, Filter::class, true))
                 throw new Exception('the provided filter is not a type of Filter class');
 
-            $this->filters->add(new $filter($this->builder, $this->model));
+            $this->filters->add(new $filter($this->builder, $this->model, $this->request));
         }
 
         $filters = require "Filters.php";
 
         foreach ($filters as $filter) {
-            $this->filters->add(new $filter($this->builder, $this->model));
+            $this->filters->add(new $filter($this->builder, $this->model, $this->request));
         }
 
-        $request = Helpers::arrayToLowerCase(request()->keys());
-
-        $this->filters->whereIn('name', $request)->each(function (Filter $filter) {
-            $filter->apply();
+        $this->filters->each(function (Filter $filter) {
+            if($this->applicable($filter)) $filter->apply();
         });
 
         return $this->builder;
     }
+
+    private function applicable(Filter $filter): bool
+    {
+        if ($filter instanceof OrderFilter)
+        {
+            if ($this->request->has('orderby', $filter->model) || $this->request->has('order', $filter->model))
+                return true;
+
+            return false;
+        }
+
+        if ($this->request->has($filter->name, $filter->model))
+            return true;
+
+        return false;
+    }
+
 }

@@ -11,6 +11,7 @@ class Helpers
         $loweredArray = [];
 
         foreach ($array as $key => $val) {
+            is_array($val) ? $loweredArray[strtolower($key)] = self::arrayToLowerCase($val, $keysOnly) :
             $loweredArray[strtolower($key)] = $keysOnly ? $val : strtolower($val);
         }
 

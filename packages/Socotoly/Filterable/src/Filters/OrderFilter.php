@@ -5,7 +5,6 @@ namespace Socotoly\Filterable\Filters;
 
 
 use Socotoly\Filterable\Contracts\Filter;
-use Socotoly\Filterable\Support\Helpers;
 
 class OrderFilter extends Filter
 {
@@ -15,16 +14,16 @@ class OrderFilter extends Filter
 
     public function apply(): void
     {
-        $request = Helpers::arrayToLowerCase(request()->all(), false);
-
-        $orderBy = in_array('orderby', array_keys($request)) ? $request['orderby'] : 'id';
+        $order = $this->request->get('order', $this->model);
+        $order = empty($order) ? 'asc' : $order;
+        $orderBy = $this->request->has('orderby', $this->model) ? $this->request->get('orderby', $this->model) : 'id';
 
         if (!($orderBy && $this->model->getConnection()->getSchemaBuilder()->hasColumn($this->model->getTable(), $orderBy)))
             $orderBy = 'id';
 
-        if ($request['order'] == self::ASC) {
+        if ($order == self::ASC) {
             $this->builder->orderBy($orderBy);
-        } elseif ($request['order'] == self::DSC) {
+        } elseif ($order == self::DSC) {
             $this->builder->orderByDesc($orderBy);
         }
     }

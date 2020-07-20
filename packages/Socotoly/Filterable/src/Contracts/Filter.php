@@ -38,6 +38,6 @@ abstract class Filter
         $this->request = $request;
     }
 
-    abstract public function apply(): void;
+    abstract public function apply($queryValue): void;
 
 }

@@ -49,8 +49,19 @@ class FilterFactory
             $this->filters->add(new $filter($this->builder, $this->model, $this->request));
         }
 
-        $this->filters->each(function (Filter $filter) {
-            if($this->applicable($filter)) $filter->apply();
+        $this->request->allFilters()->each(function ($filterQuery) {
+            $filterName = array_keys($filterQuery)[0];
+            $filterVal = array_values($filterQuery)[0];
+
+            $filter = $this->filters->first(function (Filter $filter) use ($filterName, $filterVal) {
+                if ($filter->name == $filterName)
+                        return true;
+
+                return false;
+            });
+
+            if ($filter && $this->applicable($filter))
+                $filter->apply($this->formatQuery($filterVal));
         });
 
         return $this->builder;
@@ -58,18 +69,24 @@ class FilterFactory
 
     private function applicable(Filter $filter): bool
     {
-        if ($filter instanceof OrderFilter)
-        {
-            if ($this->request->has('orderby', $filter->model) || $this->request->has('order', $filter->model))
-                return true;
-
-            return false;
-        }
-
         if ($this->request->has($filter->name, $filter->model))
             return true;
 
         return false;
     }
 
+    /**
+     * @param string $query
+     * @return int|string|array
+     */
+    private function formatQuery(string $query)
+    {
+        if (is_numeric($query))
+            return $query;
+
+        if (strpos($query, ',') !== false)
+            return explode(',', $query);
+
+        return $query;
+    }
 }

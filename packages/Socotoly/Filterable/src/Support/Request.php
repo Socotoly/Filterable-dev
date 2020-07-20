@@ -5,6 +5,7 @@ namespace Socotoly\Filterable\Support;
 
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Collection;
 
 class Request
 {
@@ -70,34 +71,36 @@ class Request
     {
         if ($model && array_key_exists($modelName = strtolower(class_basename($model)), $this->query))
         {
-            if (array_key_exists($key, $this->query[$modelName]))
-            {
+            if ($this->checkKey($key, $modelName))
                 return $this->query[$modelName][$key];
-            }
         }
 
-        if (array_key_exists($key, $this->query['undefined']))
-        {
+        if ($this->checkKey($key, 'undefined'))
             return $this->query['undefined'][$key];
-        }
 
         return "";
     }
 
-    public function has(string $key, Model $model = null): bool
+    /**
+     * @param string $key key to search for
+     * @param Model $model
+     * @return bool
+     */
+    public function has(string $key, Model $model): bool
     {
         if ($model && array_key_exists($modelName = strtolower(class_basename($model)), $this->query))
         {
-            if (array_key_exists($key, $this->query[$modelName]))
-            {
+            if ($this->checkKey($key, $modelName))
                 return true;
-            }
         }
 
-        if (array_key_exists($key, $this->query['undefined']))
-        {
+        return $this->checkKey($key, 'undefined');
+    }
+
+    private function checkKey(string $key, string $queryKey): bool
+    {
+        if (array_key_exists($key, $this->query[$queryKey]))
             return true;
-        }
 
         return false;
     }
@@ -105,6 +108,17 @@ class Request
     public function keys(): array
     {
 
+    }
+
+    public function allFilters(): Collection
+    {
+        $filters = collect();
+
+        foreach ($this->query as $query)
+            foreach ($query as $key => $val)
+                $filters->add([$key => $val]);
+
+        return $filters;
     }
 
 }

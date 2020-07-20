@@ -39,6 +39,7 @@ class WithFilter extends Filter
             'morphTo', 'morphOne', 'morphMany', 'morphToMany',
             'morphedByMany'];
 
+        // https://stackoverflow.com/a/50329308
         $f = $func->getFileName();
         $start_line = $func->getStartLine() - 1;
         $end_line = $func->getEndLine();

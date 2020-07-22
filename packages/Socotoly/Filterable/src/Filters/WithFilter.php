@@ -4,30 +4,72 @@
 namespace Socotoly\Filterable\Filters;
 
 
+use Closure;
 use Socotoly\Filterable\Contracts\Filter;
 
 class WithFilter extends Filter
 {
 
+    private $with;
+
+    private $relatedModel;
+
     public function apply($queryValue): void
     {
-        if (is_array($queryValue))
-        {
-            foreach ($queryValue as $val)
-            {
-                if ($this->relationExists($val))
-                    $this->builder->with($val);
+        if (is_array($queryValue)) {
+            foreach ($queryValue as $val) {
+                if ($this->validate($val))
+                {
+                    $this->builder->with($this->with);
+                    $this->with = '';
+                }
             }
-        }else{
-            if ($this->relationExists($queryValue))
-                $this->builder->with($queryValue);
+        } else {
+            if ($this->validate($queryValue))
+                $this->builder->with($this->with);
         }
     }
 
-    private function relationExists($query): bool
+    private function validate($query): bool
     {
-        return !! method_exists($this->model, $query)
-            && ($method = new \ReflectionMethod($this->model, $query))->isPublic()
+        $query = explode('.', $query);
+
+        foreach ($query as $key => $string) {
+            $model = $key == 0 ? $this->model : $query[$key - 1];
+
+            if ($this->relationExists($string, $model))
+            {
+                $this->with .= ($key == 0 ? '' : '.') . $string;
+            }else{
+                break;
+            }
+        }
+
+        return !empty($this->with);
+    }
+
+    private function relationExists(string $query, $model): bool
+    {
+        if (is_string($model))
+        {
+            $reader = $this->propertyReader();
+            $this->relatedModel = &$reader($this->relatedModel->$model(), 'related');
+
+            if ($this->relationFunctionExists($query, $this->relatedModel))
+                return true;
+        }else{
+            $this->relatedModel = $this->model;
+            if ($this->relationFunctionExists($query, $this->relatedModel))
+                return true;
+        }
+
+        return false;
+    }
+
+    private function relationFunctionExists(string $query, $model): bool
+    {
+        return !!method_exists($model, $query)
+            && ($method = new \ReflectionMethod($model, $query))->isPublic()
             && $method->getNumberOfParameters() == 0
             && $this->checkFunction($method);
     }
@@ -45,19 +87,28 @@ class WithFilter extends Filter
         $end_line = $func->getEndLine();
 
         $source = file($f);
-        $source = implode('', array_slice($source, 0, count($source)));
-        $source = preg_split("/".PHP_EOL."/", $source);
 
         $body = '';
-        for($i=$start_line; $i<$end_line; $i++)
-            $body.="{$source[$i]}\n";
+        for ($i = $start_line; $i < $end_line; $i++)
+            $body .= "{$source[$i]}\n";
 
-        foreach ($relations as $relation)
-        {
-            if (strpos($body, $relation) !== false)
+        foreach ($relations as $relation) {
+            $function = '$this->' . $relation . '(';
+            if (strpos($body, $function) !== false)
                 return true;
         }
 
         return false;
+    }
+
+    // https://stackoverflow.com/a/58626859
+    private function propertyReader(): Closure
+    {
+        return function &($object, $property) {
+            $value = &Closure::bind(function &() use ($property) {
+                return $this->$property;
+            }, $object, $object)->__invoke();
+            return $value;
+        };
     }
 }

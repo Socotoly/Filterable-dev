@@ -8,7 +8,6 @@ use Exception;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Socotoly\Filterable\Contracts\Filter;
-use Socotoly\Filterable\Filters\OrderFilter;
 use Socotoly\Filterable\Support\Request;
 
 class FilterFactory

@@ -17,4 +17,9 @@ class Helpers
 
         return $loweredArray;
     }
+
+    public static function classToLowerCase(object $class): string
+    {
+        return strtolower(class_basename($class));
+    }
 }

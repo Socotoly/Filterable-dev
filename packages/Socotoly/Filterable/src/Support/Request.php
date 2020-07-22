@@ -10,12 +10,18 @@ use Illuminate\Support\Collection;
 class Request
 {
 
-    private $query = ['undefined' => [], ];
+    /**
+     * @var Collection
+     */
+    private $query;
 
     private $originalQuery;
 
     public function __construct(string $originalQuery)
     {
+        $this->query = collect();
+        $this->query->put('undefined', collect());
+
         $this->originalQuery = strtolower($originalQuery);
 
         $pos = strpos($this->originalQuery, 'for=');
@@ -47,29 +53,33 @@ class Request
 
                 $forQuery = substr($forQuery, 0, $pos);
             }
-            $outForQuery = [];
+            $outForQuery = collect();
             $this->parseQueryStrings($forQuery, $outForQuery);
 
-            if (array_key_exists('for', $outForQuery))
+            if ($outForQuery->has('for'))
             {
-                $this->query[$outForQuery['for']] = array_slice($outForQuery, 1);
+                $this->query->put($outForQuery['for'], $outForQuery->except('for'));
             }
         }
     }
 
-    private function parseQueryStrings(string $queryString, array &$queryArray): void
+    private function parseQueryStrings(string $queryString, Collection &$queryArray): void
     {
         parse_str($queryString, $query);
 
         foreach ($query as $key => $val)
         {
-            $queryArray += [$key => $val];
+            if ($queryArray->has($key))
+            {
+                dd($key);
+            }
+            $queryArray->has($key) ? $queryArray[$key] += $val : $queryArray->put($key, $val);
         }
     }
 
     public function get(string $key, Model $model): string
     {
-        if ($model && array_key_exists($modelName = strtolower(class_basename($model)), $this->query))
+        if ($model && $this->query->has($modelName = Helpers::classToLowerCase($model)))
         {
             if ($this->checkKey($key, $modelName))
                 return $this->query[$modelName][$key];
@@ -88,7 +98,7 @@ class Request
      */
     public function has(string $key, Model $model): bool
     {
-        if ($model && array_key_exists($modelName = strtolower(class_basename($model)), $this->query))
+        if ($model && $this->query->has($modelName = Helpers::classToLowerCase($model)))
         {
             if ($this->checkKey($key, $modelName))
                 return true;
@@ -99,7 +109,7 @@ class Request
 
     private function checkKey(string $key, string $queryKey): bool
     {
-        if (array_key_exists($key, $this->query[$queryKey]))
+        if ($this->query->get($queryKey)->has($key))
             return true;
 
         return false;
@@ -112,11 +122,11 @@ class Request
 
     public function allFilters(): Collection
     {
+        return $this->query;
         $filters = collect();
 
-        foreach ($this->query as $query)
-            foreach ($query as $key => $val)
-                $filters->add([$key => $val]);
+        foreach ($this->query as $key => $val)
+            $filters->put($key, $val);
 
         return $filters;
     }
